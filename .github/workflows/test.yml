@@ -1,0 +1,50 @@
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+
+  dry:
+    strategy:
+      matrix:
+        configuration: [Debug, Release]
+        mode: ["", "--cmd", "--wsl"]
+        once: ["", "--once"]
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.x.x
+
+    - run: |
+        dotnet run -c ${{ matrix.configuration }} --project ./src -- \
+          dry \
+          ${{ matrix.mode }} \
+          ${{ matrix.once }} \
+          sample
+
+  run:
+    strategy:
+      matrix:
+        configuration: [Debug, Release]
+        runner: [ubuntu-latest, windows-latest, macos-latest]
+    
+    runs-on: ${{ matrix.runner }}
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.x.x
+
+    - run: |
+        dotnet run -c ${{ matrix.configuration }} --project ./src -- \
+          run \
+          sample

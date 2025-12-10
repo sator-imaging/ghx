@@ -1,0 +1,60 @@
+on:
+  workflow_call:
+    inputs:
+      message:
+        type: string
+        default: hello, world.
+      value:
+        type: number
+        default: 10
+      choice:
+        type: choice
+        options: [warning]
+        default: 'warning'
+      bool:
+        type: boolean
+        default: false
+      error_if_no_default:  # BUT error occurs only when value is referenced in 'run' step
+        type: string
+
+
+jobs:
+
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        foo: ["has space", no-space]
+        bar: ["", not-empty]
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.x.x
+
+    - run: |
+        echo first 'run' step (foo='${{matrix.foo}}' bar='${{matrix.bar}}')
+
+    - name: 2nd Step
+      # ERROR: shell not supported even if bash
+      # shell: bash
+      run: |
+        # ERROR: no default value
+        # echo ${{inputs.error_if_no_default}}
+
+        # multiline format handling
+        echo ${{inputs.message      }} \
+          line end back slash is \
+          replaced with caret if --cmd option supplied
+
+        pwd
+        echo $0  # positional parameter conversion supported
+
+        sleep 1  # will be converted to TIMEOUT for windows
+
+  second_job:
+    runs-on: ubuntu-latest
+    steps:
+    - run: echo hello from 2nd job  # line end comment removal "double quote" and 'single quote'
