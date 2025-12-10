@@ -1,21 +1,4 @@
 on:
-  workflow_dispatch:
-    inputs:
-      message:
-        type: string
-        default: hello, world.
-      value:
-        type: number
-        default: 10
-      choice:
-        type: choice
-        options: [warning]
-        default: 'warning'
-      bool:
-        type: boolean
-        default: false
-      error_if_no_default:  # BUT error occurs only when value is referenced in 'run' step
-        type: string
   workflow_call:
     inputs:
       message:
