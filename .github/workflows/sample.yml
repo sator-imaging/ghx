@@ -51,9 +51,6 @@ jobs:
         sleep 1  # will be converted to TIMEOUT for windows
 
   second_job:
-    # empty matrix is allowed
-    strategy:
-      matrix:
     runs-on: ubuntu-latest
     steps:
     - run: echo hello from 2nd job  # line end comment removal; don't check it's quoted by "double quote" or 'single quote'
