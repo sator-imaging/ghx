@@ -47,4 +47,5 @@ jobs:
     - run: |
         dotnet run -c ${{ matrix.configuration }} --project ./src -- \
           run \
+          --wsl \    # windows-latest uses powershell as a default shell
           sample
