@@ -187,7 +187,25 @@ jobs:
 
 
 
-# 📝 Technical Notes
+# 📝 Supported Features Overview
+
+| Feature                | Support Level | Notes                                                               |
+|------------------------|---------------|---------------------------------------------------------------------|
+| `workflow_call` trigger  | ✅ Full        | Primary use case; `workflow_dispatch` also works                      |
+| Input definitions      | ✅ Full        | Type declarations ignored; defaults required if referenced          |
+| Matrix strategies      | ✅ Full        | Cartesian product expansion; `--once` flag available                  |
+| Multiple jobs          | ✅ Full        | Sequential execution; no parallelization or environment isolation   |
+| Run steps              | ✅ Full        | Only `run:` blocks extracted; `uses:` actions ignored               |
+| Placeholder expressions| ⚠️ Partial     | `${{ inputs.* }}` and `${{ matrix.* }}` supported; others unsupported|
+| Bash scripts           | ✅ Full        | Default shell; cross-platform with conversion                       |
+| Custom shells          | ❌ None        | `shell:` property causes error                                      |
+| Runners                | ⚠️ Limited     | Only `ubuntu-latest` executed; others display warning               |
+| Positional parameters  | ⚠️ Limited     | `$0-$9` converted to `%0-%9` for CMD                                |
+| Sleep commands         | ✅ Full        | `sleep N` → `TIMEOUT /T N /NOBREAK >nul` on Windows                 |
+
+
+
+## Technical Notes
 
 - Placeholder values for `inputs.*` and `matrix.*` are pulled from defaults/matrix entries and quoted as needed.
 - Any `>> $GITHUB_STEP_SUMMARY` or `> $GITHUB_STEP_SUMMARY` redirections are removed from generated commands.

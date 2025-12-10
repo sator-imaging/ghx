@@ -184,7 +184,25 @@ jobs:
 
 
 
-# 📝 Technical Notes
+# 📝 支持功能概览
+
+| 功能                  | 支持级别 | 备注                                                        |
+|-----------------------|----------|-------------------------------------------------------------|
+| `workflow_call` 触发器  | ✅ 完全    | 主要用途；`workflow_dispatch` 也可用                        |
+| 输入定义              | ✅ 完全    | 类型声明被忽略；引用时必须有默认值                          |
+| 矩阵策略              | ✅ 完全    | 笛卡尔展开；可用 `--once` 只取第一个                        |
+| 多个作业              | ✅ 完全    | 顺序执行；无并行、无环境隔离                                |
+| Run 步骤              | ✅ 完全    | 仅提取 `run:`；`uses:` 被忽略                               |
+| 占位符表达式          | ⚠️ 部分    | 仅支持 `${{ inputs.* }}` 与 `${{ matrix.* }}`                |
+| Bash 脚本             | ✅ 完全    | 默认 shell；通过转换跨平台                                  |
+| 自定义 shell          | ❌ 无      | 指定 `shell:` 会报错                                        |
+| Runner                | ⚠️ 有限    | 只执行 `ubuntu-latest`，其他值仅提示警告                    |
+| 位置参数              | ⚠️ 有限    | CMD 输出时 `$0-$9` 转为 `%0-%9`                             |
+| Sleep 命令            | ✅ 完全    | `sleep N` 会在 Windows 上替换为 `TIMEOUT /T N /NOBREAK >nul` |
+
+
+
+## Technical Notes
 
 - `inputs.*` 与 `matrix.*` 的占位符取自 defaults/matrix，并按需加引号。
 - 生成的命令会移除 `>> $GITHUB_STEP_SUMMARY` 与 `> $GITHUB_STEP_SUMMARY` 重定向。
