@@ -1,0 +1,12 @@
+bin
+obj
+
+.*
+!.github
+!.gitignore
+!.editorconfig
+
+*.md
+!README.md
+!README.*.md
+!LICENSE.md
