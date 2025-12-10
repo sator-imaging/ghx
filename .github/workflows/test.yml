@@ -46,4 +46,3 @@ jobs:
 
     - run: |
         dotnet run -c ${{ matrix.configuration }} --project ./src -- run sample
-        dotnet run -c ${{ matrix.configuration }} --project ./src -- run sample --wsl
