@@ -57,7 +57,7 @@ jobs:
           df -h /
         elif [[ "$RUNNER_OS" == "Windows" ]]; then
           echo "--- Windows System Info ---"
-          systeminfo | findstr /B /C:"OS Name" /C:"OS Version" /C:"System Type" /C:"Total Physical Memory"
+          systeminfo ###| findstr /B /C:"OS Name" /C:"OS Version" /C:"System Type" /C:"Total Physical Memory"
           wmic cpu get Name,NumberOfCores,NumberOfLogicalProcessors,Architecture
           wmic logicaldisk get DeviceID,Size,FreeSpace,FileSystem
         fi
