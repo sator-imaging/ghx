@@ -353,7 +353,7 @@ internal static class WorkflowUtilities
     {
         if (combo.Count == 0)
         {
-            return "(no matrix)";
+            return "no matrix";
         }
 
         return string.Join(" ", combo.Select(kv => $"{kv.Key}={kv.Value}"));
