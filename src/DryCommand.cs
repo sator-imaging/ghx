@@ -12,8 +12,7 @@ internal sealed class DryCommand
         var jobs = WorkflowUtilities.GetJobs(root);
         if (jobs.Count == 0)
         {
-            Console.Error.WriteLine("no jobs found in workflow.");
-            return;
+            throw new InvalidOperationException("No jobs found in workflow.");
         }
 
         var script = WorkflowUtilities.BuildCommandScript(inputs, jobs, useCmdFormatting, onceOnly);

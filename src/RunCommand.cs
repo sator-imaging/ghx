@@ -10,8 +10,7 @@ internal sealed class RunCommand
     {
         if (!OperatingSystem.IsWindows() && useCmdFormatting)
         {
-            Console.Error.WriteLine("--cmd is only supported on Windows.");
-            return 1;
+            throw new InvalidOperationException("--cmd is only supported on Windows.");
         }
 
         var root = WorkflowUtilities.LoadRoot(path);
@@ -20,8 +19,7 @@ internal sealed class RunCommand
         var jobs = WorkflowUtilities.GetJobs(root);
         if (jobs.Count == 0)
         {
-            Console.Error.WriteLine("no jobs found in workflow.");
-            return 1;
+            throw new InvalidOperationException("No jobs found in workflow.");
         }
 
         var script = WorkflowUtilities.BuildCommandScript(inputs, jobs, useCmdFormatting, onceOnly);
@@ -41,8 +39,7 @@ internal sealed class RunCommand
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"failed to run generated script: {ex.Message}");
-            return 1;
+            throw new InvalidOperationException($"Failed to run generated script: {ex.Message}", ex);
         }
         finally
         {
@@ -75,7 +72,7 @@ internal sealed class RunCommand
                 return ("wsl", $"bash -el \"{wslPath}\"");
             }
 
-            throw new InvalidOperationException("on Windows, specify --cmd or --wsl.");
+            throw new InvalidOperationException("On Windows, specify --cmd or --wsl.");
         }
 
         return ("/usr/bin/env", $"bash -el \"{scriptPath}\"");

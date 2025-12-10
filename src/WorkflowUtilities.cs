@@ -40,7 +40,7 @@ internal static class WorkflowUtilities
 
         if (yaml.Documents.Count == 0 || yaml.Documents[0].RootNode is not YamlMappingNode root)
         {
-            throw new InvalidOperationException("workflow file is empty or malformed.");
+            throw new InvalidOperationException("Workflow file is empty or malformed.");
         }
 
         return root;
@@ -106,7 +106,7 @@ internal static class WorkflowUtilities
         {
             if (axis.Value is not YamlSequenceNode seq)
             {
-                throw new InvalidOperationException($"matrix '{axis.Key}' must be a sequence.");
+                throw new InvalidOperationException($"Matrix '{axis.Key}' must be a sequence.");
             }
 
             axes[axis.Key.ToString()] = [.. seq.Select(v => QuoteIfNeeded(v.ToString()))];
@@ -139,7 +139,7 @@ internal static class WorkflowUtilities
                     ? nameNode.ToString()
                     : $"#{stepIndex}";
 
-                throw new InvalidOperationException($"job '{jobName}' step '{stepName}' specifies shell; custom shells are not supported.");
+                throw new InvalidOperationException($"Job '{jobName}' step '{stepName}' specifies shell; custom shells are not supported.");
             }
 
             if (map.Children.TryGetValue(new YamlScalarNode("run"), out var runNode))
@@ -158,12 +158,13 @@ internal static class WorkflowUtilities
         if (useCmdFormatting)
         {
             commands.Add("@ECHO OFF");
-            commands.Add(string.Empty);
         }
         else
         {
-            commands.Add("set -e");
-            commands.Add(string.Empty);
+            if (!OperatingSystem.IsWindows())  // not work as expected on WSL. why??
+            {
+                commands.Add("set -e");
+            }
         }
 
         if (inputs.Count > 0)
@@ -238,7 +239,7 @@ internal static class WorkflowUtilities
             commands.Add("  EXIT 310");
         }
 
-        return string.Join(Environment.NewLine, commands);
+        return string.Join(useCmdFormatting ? Environment.NewLine : "\n", commands);  // "\n" for WSL compatibility
     }
 
     public static string ReplacePlaceholders(string run, IReadOnlyDictionary<string, InputDefinition> inputs, IReadOnlyDictionary<string, string> matrix, bool useCmdFormatting)
@@ -302,7 +303,7 @@ internal static class WorkflowUtilities
                 var variableCheckTarget = RegexHelpers.DollarPositionalPattern.Replace(replacedLine, string.Empty);
                 if (variableCheckTarget.Contains('$'))
                 {
-                    throw new InvalidOperationException("unsupported template expression found.");
+                    throw new InvalidOperationException("Unsupported template expression found.");
                 }
             }
 
@@ -369,7 +370,7 @@ internal static class WorkflowUtilities
     {
         if (!job.Children.TryGetValue(new YamlScalarNode("runs-on"), out var runsOnNode))
         {
-            throw new InvalidOperationException($"job '{jobName}' must specify runs-on.");
+            throw new InvalidOperationException($"Job '{jobName}' must specify runs-on.");
         }
 
         var placeholderResolver = CreatePlaceholderResolver(inputs, matrix);
@@ -387,13 +388,13 @@ internal static class WorkflowUtilities
                 {
                     if (node is not YamlScalarNode scalarNode)
                     {
-                        throw new InvalidOperationException($"job '{jobName}' runs-on entries must be scalars.");
+                        throw new InvalidOperationException($"Job '{jobName}' runs-on entries must be scalars.");
                     }
 
                     return ReplaceRunnerValue(scalarNode.Value ?? string.Empty);
                 })
                 .Where(value => !string.IsNullOrWhiteSpace(value))),
-            _ => throw new InvalidOperationException($"job '{jobName}' has invalid runs-on definition.")
+            _ => throw new InvalidOperationException($"Job '{jobName}' has invalid runs-on definition.")
         };
     }
 
@@ -412,12 +413,12 @@ internal static class WorkflowUtilities
             {
                 if (!inputs.TryGetValue(key, out var input))
                 {
-                    throw new InvalidOperationException($"input '{key}' not defined.");
+                    throw new InvalidOperationException($"Input '{key}' not defined.");
                 }
 
                 if (!input.HasDefault)
                 {
-                    throw new InvalidOperationException($"input '{key}' has no default value.");
+                    throw new InvalidOperationException($"Input '{key}' has no default value.");
                 }
 
                 return input.DefaultValue ?? string.Empty;
@@ -425,7 +426,7 @@ internal static class WorkflowUtilities
 
             if (!matrix.TryGetValue(key, out var matrixValue))
             {
-                throw new InvalidOperationException($"matrix value '{key}' not defined.");
+                throw new InvalidOperationException($"Matrix value '{key}' not defined.");
             }
 
             return matrixValue;

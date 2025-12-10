@@ -1,3 +1,7 @@
+[![nuget](https://img.shields.io/nuget/vpre/GitHubWorkflow)](https://www.nuget.org/packages/GitHubWorkflow)
+&nbsp;
+[![DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/sator-imaging/GitHubWorkflow)
+
 [🇺🇸 English](./README.md)
 &nbsp; ❘ &nbsp;
 [🇯🇵 日本語版](./README.ja.md)
@@ -39,6 +43,7 @@ dotnet tool install -g GitHubWorkflow
 Run by `ghx`: GitHub workflow eXecute
 
 ```bash
+ghx new my-workflow     # create new workflow
 ghx dry my-workflow     # dry run (prints generated script)
 ghx my-workflow --once  # run only the first matrix combination
 ```
@@ -58,6 +63,7 @@ ghx [command] [options] <workflow-file>
 ## Commands
 - `run`: writes a temp script file and execute. (default)
 - `dry`: prints run steps
+- `new`: creates an empty workflow file under `.github/workflows`
 
 ## Options
 - `--cmd`: emit Windows `cmd.exe`-formatted output (default on Windows only).
@@ -71,11 +77,23 @@ ghx [command] [options] <workflow-file>
 
 # 🧭 Common Usecase
 
-Create reusable workflow like this:
+Create a new workflow:
+
+```bash
+ghx new test   # creates .github/workflows/test.yml
+```
+
+
+Edit template:
 
 ```yaml
 on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
   workflow_call:
+  workflow_dispatch:
 
 jobs:
   test:
@@ -91,8 +109,8 @@ jobs:
 
     # 'uses' are completely ignored
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-dotnet@v4
+    - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5      # v4.3.1
+    - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9  # v4.3.1
       with:
         dotnet-version: 10.x.x
 
@@ -123,6 +141,7 @@ Trial-run the same workflow locally with matrix expansion collapsed to a single 
 ghx run test --once
 ```
 
+
 On Windows, force `cmd.exe` formatting or override it to emit bash-compatible scripts:
 
 ```bash
@@ -132,9 +151,9 @@ ghx run test --wsl    # force bash via WSL/bash even on Windows
 
 
 
-## Composite Actions
+## 🧩 Composite Actions
 
-Here shows sample GitHub Actions composite that uses reusable `test` workflow.
+Here shows GitHub Actions composite sample that uses reusable `test` workflow.
 
 ```yaml
 name: ci
@@ -181,13 +200,14 @@ jobs:
 - Multiple jobs are supported, but they share process state; no environment reset happens between jobs.
 - Jobs are executed sequentially; a job starts only after all matrix combinations from the previous job finish.
 - Expands matrix combinations (optional `--once` to keep only the first).
+- Matrix handling is basic: only simple axes arrays are supported (no `include`/`exclude`/`fail-fast`/`max-parallel` or nested objects).
 - Generates `bash` or Windows `cmd`-formatted scripts.
 
 
 
 
 
-# Missing Features
+# ⏳ Missing Features
 
 TODO
 
@@ -195,3 +215,4 @@ TODO
 - `--step-summary <path>`: Instead of removing redirections, set custom output path for.
 - `$*` and `$@` conversion: `%*` exists in cmd but it is not complete equivalent. (`"$@"` is equivalent to `%*`; quote required)
 - `runs-on`: Due to bash to cmd conversion is only supported, it doesn't accept rather than `ubuntu-latest`.
+- Native AOT Support: Some report found that `VYaml` can be compiled with Native AOT enabled.

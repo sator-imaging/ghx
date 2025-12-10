@@ -1,36 +1,11 @@
-using System.CommandLine;
 using GitHubWorkflow;
-using System.Linq;
 using System;
-using System.CommandLine.Parsing;
+using System.CommandLine;
 
-var workflowArgument = new Argument<string>("workflow-file")
+var workflowFileArgument = new Argument<string>("workflow-file")
 {
     Description = "GitHub workflow file name (.yml/.yaml or base name).",
-    CustomParser = result =>
-    {
-        var value = result.Tokens.SingleOrDefault()?.Value ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            result.AddError("workflow file name is required.");
-            return string.Empty;
-        }
-
-        if (value.Contains('/') || value.Contains('\\'))
-        {
-            result.AddError("workflow file must be a file name without any path separators.");
-            return string.Empty;
-        }
-
-        var resolvedPath = WorkflowUtilities.ResolveWorkflowPath(value);
-        if (resolvedPath == null)
-        {
-            result.AddError($"workflow file '{value}' not found under .github/workflows with .yml or .yaml extension.");
-            return string.Empty;
-        }
-
-        return resolvedPath;
-    }
+    CustomParser = ArgumentHelpers.ParseWorkflowPath,
 };
 
 var cmdFlag = new Option<bool>("--cmd")
@@ -42,10 +17,6 @@ var cmdFlag = new Option<bool>("--cmd")
 var wslFlag = new Option<bool>("--wsl")
 {
     Description = "Force bash-compatible output (disables --cmd even on Windows).",
-    Validators =
-            {
-                v =>{},
-            },
 };
 
 var onceFlag = new Option<bool>("--once", "-1")
@@ -54,24 +25,12 @@ var onceFlag = new Option<bool>("--once", "-1")
 };
 
 
-var sharedValidator = (CommandResult cmdResult) =>
-{
-    var useCmd = cmdResult.GetValue(cmdFlag);
-    var useWsl = cmdResult.GetValue(wslFlag);
-
-    if (useCmd && useWsl)
-    {
-        cmdResult.AddError("Options --cmd and --wsl cannot be used together.");
-    }
-};
-
-
 var dryCommand = new Command("dry", "Prints run steps for a workflow. [Default]")
 {
     cmdFlag,
     wslFlag,
     onceFlag,
-    workflowArgument,
+    workflowFileArgument,
 };
 
 var runCommand = new Command("run", "Generates a runnable script for a workflow and prints the command to execute it.")
@@ -79,7 +38,12 @@ var runCommand = new Command("run", "Generates a runnable script for a workflow 
     cmdFlag,
     wslFlag,
     onceFlag,
-    workflowArgument,
+    workflowFileArgument,
+};
+
+var newCommand = new Command("new", "Creates a new workflow template under .github/workflows.")
+{
+    workflowFileArgument,
 };
 
 var rootCommand = new RootCommand("GitHub Actions workflow tool.")
@@ -88,24 +52,27 @@ var rootCommand = new RootCommand("GitHub Actions workflow tool.")
     cmdFlag,
     wslFlag,
     onceFlag,
-    workflowArgument,
+    workflowFileArgument,
 
     // sub commands
     dryCommand,
     runCommand,
+    newCommand,
 };
 
 var dryAction = (ParseResult args) =>
 {
-    var resolvedPath = args.GetRequiredValue(workflowArgument);
-    var useCmd = args.GetValue(cmdFlag);
-    var useWsl = args.GetValue(wslFlag);
-    var onceOnly = args.GetValue(onceFlag);
-
-    var useCmdFormatting = useCmd && !useWsl;
-
-    return ConsoleHelpers.RunWithErrorHandling(() =>
+    return ConsoleHelpers.RunWithErrorHandling(rootCommand, () =>
     {
+        var resolvedPath = args.GetRequiredValue(workflowFileArgument);
+        var useCmd = args.GetValue(cmdFlag);
+        var useWsl = args.GetValue(wslFlag);
+        var onceOnly = args.GetValue(onceFlag);
+
+        var useCmdFormatting = useCmd && !useWsl;
+
+        WorkflowFileHelpers.EnsureWorkflowExists(resolvedPath);
+
         DryCommand.Run(resolvedPath, useCmdFormatting, onceOnly);
         return 0;
     });
@@ -113,25 +80,38 @@ var dryAction = (ParseResult args) =>
 
 var runAction = (ParseResult args) =>
 {
-    var resolvedPath = args.GetRequiredValue(workflowArgument);
-    var useCmd = args.GetValue(cmdFlag);
-    var useWsl = args.GetValue(wslFlag);
-    var onceOnly = args.GetValue(onceFlag);
-
-    var useCmdFormatting = useCmd && !useWsl;
-
-    return ConsoleHelpers.RunWithErrorHandling(() =>
+    return ConsoleHelpers.RunWithErrorHandling(rootCommand, () =>
     {
+        var resolvedPath = args.GetRequiredValue(workflowFileArgument);
+        var useCmd = args.GetValue(cmdFlag);
+        var useWsl = args.GetValue(wslFlag);
+        var onceOnly = args.GetValue(onceFlag);
+
+        var useCmdFormatting = useCmd && !useWsl;
+
+        WorkflowFileHelpers.EnsureWorkflowExists(resolvedPath);
+
         return RunCommand.Run(resolvedPath, useCmdFormatting, useWsl, onceOnly);
+    });
+};
+
+var newAction = (ParseResult args) =>
+{
+    return ConsoleHelpers.RunWithErrorHandling(rootCommand, () =>
+    {
+        var targetPath = args.GetRequiredValue(workflowFileArgument);
+
+        return NewCommand.Run(targetPath);
     });
 };
 
 dryCommand.SetAction(dryAction);
 runCommand.SetAction(runAction);
+newCommand.SetAction(newAction);
 rootCommand.SetAction(runAction);
 
-dryCommand.Validators.Add(sharedValidator);
-runCommand.Validators.Add(sharedValidator);
-rootCommand.Validators.Add(sharedValidator);
+dryCommand.Validators.Add(ArgumentHelpers.ValidateCmdVsWsl(cmdFlag, wslFlag));
+runCommand.Validators.Add(ArgumentHelpers.ValidateCmdVsWsl(cmdFlag, wslFlag));
+rootCommand.Validators.Add(ArgumentHelpers.ValidateCmdVsWsl(cmdFlag, wslFlag));
 
 return await rootCommand.Parse(args).InvokeAsync();

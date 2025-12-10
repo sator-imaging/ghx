@@ -13,7 +13,9 @@ jobs:
   publish:
     needs: test
     if: ${{ !failure() }}
-    runs-on: ubuntu-latest
+    
+    # As ReadyToRun enabled, use windows
+    runs-on: windows-2025  # Windows 10
 
     permissions:
       id-token: write  # enable GitHub OIDC token issuance for this job
@@ -24,10 +26,41 @@ jobs:
         package: [src]
 
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-dotnet@v4
+    - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5      # v4.3.1
+    - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9  # v4.3.1
       with:
         dotnet-version: 10.x.x
+
+    - name: Display runner info
+      shell: bash
+      run: |
+        echo "=== GitHub Actions Runner Info ==="
+        echo "RUNNER_NAME: $RUNNER_NAME"
+        echo "RUNNER_OS: $RUNNER_OS"
+        echo "RUNNER_ARCH: $RUNNER_ARCH"
+        echo "RUNNER_TEMP: $RUNNER_TEMP"
+        echo "RUNNER_TOOL_CACHE: $RUNNER_TOOL_CACHE"
+        echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
+        echo ""
+
+        if [[ "$RUNNER_OS" == "Linux" ]]; then
+          echo "--- Linux System Info ---"
+          uname -a
+          lscpu
+          free -h
+          df -h /
+        elif [[ "$RUNNER_OS" == "macOS" ]]; then
+          echo "--- macOS System Info ---"
+          uname -a
+          sysctl -n machdep.cpu.brand_string
+          sysctl hw.physicalcpu hw.logicalcpu hw.memsize
+          df -h /
+        elif [[ "$RUNNER_OS" == "Windows" ]]; then
+          echo "--- Windows System Info ---"
+          systeminfo | findstr /B /C:"OS Name" /C:"OS Version" /C:"System Type" /C:"Total Physical Memory"
+          wmic cpu get Name,NumberOfCores,NumberOfLogicalProcessors,Architecture
+          wmic logicaldisk get DeviceID,Size,FreeSpace,FileSystem
+        fi
 
     - name: Pack (release)
       run: |
@@ -41,7 +74,7 @@ jobs:
     ################################
     #  NUGET
     - name: Trusted Publishing (id-token permission required)
-      uses: NuGet/login@v1
+      uses: NuGet/login@d22cc5f58ff5b88bf9bd452535b4335137e24544  # v1.1.0
       id: login  # --> ${{ steps.login.outputs.NUGET_API_KEY }}
       with:
         user: ${{ secrets.NUGET_LOGIN }}

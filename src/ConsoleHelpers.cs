@@ -1,10 +1,11 @@
 using System;
+using System.CommandLine;
 
 namespace GitHubWorkflow;
 
 internal static class ConsoleHelpers
 {
-    public static int RunWithErrorHandling(Func<int> action)
+    public static int RunWithErrorHandling(RootCommand rootCommand, Func<int> action)
     {
         try
         {
@@ -12,7 +13,9 @@ internal static class ConsoleHelpers
         }
         catch (Exception ex)
         {
-            WriteError($"error: {ex.Message}");
+            rootCommand.Parse("-h").Invoke();  // no way to show help!!
+
+            WriteError($"× Error: {ex.Message}");
             return 1;
         }
     }

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFrameworks>net10.0;net9.0;net8.0;net7.0;net6.0;net5.0</TargetFrameworks>
     <Nullable>enable</Nullable>
 
     <ToolCommandName>ghx</ToolCommandName>
@@ -15,5 +15,18 @@
     <PackageReference Include="System.CommandLine" Version="2.0.0" />
     <PackageReference Include="YamlDotNet" Version="16.3.0" />
   </ItemGroup>
+
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+
+    <!--
+      Generates ReadyToRun code: works cross-platform, but native optimizations are for the build platform
+    -->
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <!--
+      Disable Tiered Compilation to ensure consistent startup performance with ReadyToRun code
+    -->
+    <TieredCompilation>false</TieredCompilation>
+  </PropertyGroup>
 
 </Project>

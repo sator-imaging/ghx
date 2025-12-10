@@ -1,3 +1,7 @@
+[![nuget](https://img.shields.io/nuget/vpre/GitHubWorkflow)](https://www.nuget.org/packages/GitHubWorkflow)
+&nbsp;
+[![DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/sator-imaging/GitHubWorkflow)
+
 [🇺🇸 English](./README.md)
 &nbsp; ❘ &nbsp;
 [🇯🇵 日本語版](./README.ja.md)
@@ -39,6 +43,7 @@ dotnet tool install -g GitHubWorkflow
 `ghx` で実行: GitHub workflow eXecute
 
 ```bash
+ghx new my-workflow     # ワークフローを新規作成
 ghx dry my-workflow     # ドライラン (生成スクリプトを表示)
 ghx my-workflow --once  # マトリクスの先頭組み合わせだけ実行
 ```
@@ -58,6 +63,7 @@ ghx [command] [options] <workflow-file>
 ## Commands
 - `run`: 一時スクリプトを書き出して実行 (デフォルト)
 - `dry`: 実行手順を出力
+- `new`: `.github/workflows` 配下に空のワークフロー ファイルを作成
 
 ## Options
 - `--cmd`: Windows の `cmd.exe` 形式で出力 (Windows ではデフォルト)。
@@ -71,11 +77,23 @@ ghx [command] [options] <workflow-file>
 
 # 🧭 よくあるユースケース
 
-こんな再利用可能なワークフローを作成します:
+新しいワークフローを作成:
+
+```bash
+ghx new test   # .github/workflows/test.yml を作成
+```
+
+
+テンプレートを編集:
 
 ```yaml
 on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
   workflow_call:
+  workflow_dispatch:
 
 jobs:
   test:
@@ -91,8 +109,8 @@ jobs:
 
     # 'uses' は完全に無視
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-dotnet@v4
+    - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5      # v4.3.1
+    - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9  # v4.3.1
       with:
         dotnet-version: 10.x.x
 
@@ -130,9 +148,9 @@ ghx run test --wsl    # Windows でも WSL/bash を強制
 
 
 
-## Composite Actions
+## 🧩 Composite Actions
 
-再利用可能な `test` ワークフローを呼び出すサンプルの GitHub Actions composite です。
+再利用可能な `test` ワークフローを呼び出す GitHub Actions composite サンプルです。
 
 ```yaml
 name: ci
@@ -178,13 +196,14 @@ jobs:
 - ワークフローの `inputs.*` がデフォルトを持たなくても構いませんが、デフォルトなしの入力を `run` ステップが参照するとツールは即時失敗します。
 - 複数ジョブをサポートしますが、プロセス状態は共有されます。ジョブ間で環境リセットは行いません。
 - マトリクス組み合わせを展開します (必要に応じて `--once` で先頭のみ残せます)。
+- マトリクス処理はシンプルです。単純な軸配列のみ対応で、`include`/`exclude`/`fail-fast`/`max-parallel` やネストオブジェクトには非対応です。
 - `bash` または Windows `cmd` 形式のスクリプトを生成します。
 
 
 
 
 
-# Missing Features
+# ⏳ Missing Features
 
 TODO
 
@@ -192,3 +211,4 @@ TODO
 - `--step-summary <path>`: リダイレクトを削除する代わりにカスタム出力パスを設定。
 - `$*` と `$@` の変換: cmd には `%*` があるが完全互換ではない (`"$@"` は `%*` が近い。クオート必須)。
 - `runs-on`: bash→cmd 変換のみ対応のため、`ubuntu-latest` 以外は受け付けない。
+- Native AOT Support: 一部報告では `VYaml` を Native AOT 有効でコンパイルできています。
