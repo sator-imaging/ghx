@@ -37,14 +37,14 @@ on:
   #pull_request:
   #  branches: [ ""main"" ]
   #workflow_call:
-  workflow_dispatch:
+  #workflow_dispatch:
 
 jobs:
 
   {jobName}:
-    strategy:
-      matrix:
-        # uncomment to enable: configuration: [Debug, Release]
+    #strategy:
+    #  matrix:
+    #    configuration: [Debug, Release]
 
     runs-on: ubuntu-latest   # tip: runs-on can use ${{{{ matrix.<name> }}}}
 
