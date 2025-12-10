@@ -9,8 +9,9 @@ on:
         default: 10
       type:
         type: choice
-        options: [warning]
-        default: 'warning'
+        default: warning
+        options:
+        - warning
       enable:
         type: boolean
         default: false
