@@ -19,6 +19,12 @@
   <PropertyGroup>
     <LangVersion>latest</LangVersion>
 
+    <!-- Alias package -->
+    <PackageId Condition=" '$(PackAsCommandName)' == 'true' ">$(ToolCommandName)</PackageId>
+
+    <!-- NETSDK1138: The target framework is out of support -->
+    <NoWarn>$(NoWarn);NETSDK1138</NoWarn>
+
     <!--
       Generates ReadyToRun code: works cross-platform, but native optimizations are for the build platform
     -->

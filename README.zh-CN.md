@@ -1,3 +1,4 @@
+[![nuget](https://img.shields.io/nuget/vpre/ghx)](https://www.nuget.org/packages/ghx)
 [![nuget](https://img.shields.io/nuget/vpre/GitHubWorkflow)](https://www.nuget.org/packages/GitHubWorkflow)
 &nbsp;
 [![DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/sator-imaging/GitHubWorkflow)
