@@ -31,7 +31,7 @@ internal sealed class NewCommand
 
             if (templatePath is not null)
             {
-                File.WriteAllText(path, File.ReadAllText(templatePath));
+                File.Copy(templatePath, path);
             }
             else
             {
