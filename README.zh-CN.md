@@ -64,7 +64,7 @@ ghx [command] [options] <workflow-file>
 ## Commands
 - `run`: 写入临时脚本文件并执行 (默认)
 - `dry`: 打印运行步骤
-- `new`: 在 `.github/workflows` 下创建空的工作流文件
+- `new`: 在 `.github/workflows` 下创建工作流文件 (如有 `.github/ghx_template.yml|.yaml` 则使用该模板)
 
 ## Options
 - `--cmd`: 输出 Windows `cmd.exe` 格式 (仅 Windows 上为默认；在 macOS/Linux 上仅用于 dry 预览)。
@@ -83,6 +83,9 @@ ghx [command] [options] <workflow-file>
 ```bash
 ghx new test   # 创建 .github/workflows/test.yml
 ```
+
+> [!TIP]
+> 如果仓库根目录存在 `.github/ghx_template.yml` 或 `.github/ghx_template.yaml`，将直接复制该文件；否则会使用默认模板。
 
 
 编辑模板：

@@ -64,7 +64,7 @@ ghx [command] [options] <workflow-file>
 ## Commands
 - `run`: 一時スクリプトを書き出して実行 (デフォルト)
 - `dry`: 実行手順を出力
-- `new`: `.github/workflows` 配下に空のワークフロー ファイルを作成
+- `new`: `.github/workflows` 配下にワークフロー ファイルを作成 (`.github/ghx_template.yml|.yaml` があればそれを使用)
 
 ## Options
  - `--cmd`: Windows の `cmd.exe` 形式で出力 (Windows ではデフォルト；macOS/Linux では dry でのプレビュー専用)。
@@ -83,6 +83,9 @@ ghx [command] [options] <workflow-file>
 ```bash
 ghx new test   # .github/workflows/test.yml を作成
 ```
+
+> [!TIP]
+> リポジトリルートに `.github/ghx_template.yml` または `.github/ghx_template.yaml` がある場合、その内容をそのままコピーします。ない場合はデフォルトのひな型を使用します。
 
 
 テンプレートを編集:

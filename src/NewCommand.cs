@@ -3,6 +3,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 
 namespace GitHubWorkflow;
 
@@ -27,10 +28,17 @@ internal sealed class NewCommand
             }
 
             var jobName = Path.GetFileNameWithoutExtension(path);
+            var templatePath = TryResolveTemplatePath();
 
-            // NOTE: at least one entry required for 'on'.
-            //       (if not, it unexpectedly runs on pull request or etc.)
-            File.WriteAllText(path,
+            if (templatePath is not null)
+            {
+                File.Copy(templatePath, path);
+            }
+            else
+            {
+                // NOTE: at least one entry required for 'on'.
+                //       (if not, it unexpectedly runs on pull request or etc.)
+                File.WriteAllText(path,
 $@"name: {jobName}
 
 on:
@@ -38,6 +46,8 @@ on:
   #  branches: [ ""main"" ]
   #pull_request:
   #  branches: [ ""main"" ]
+  #release:
+  #  types: [ published ]
   #workflow_call:
   workflow_dispatch:
 
@@ -59,7 +69,8 @@ jobs:
       - run: |
           echo Template created with 'ghx'
 "
-            );
+                );
+            }
 
             Console.WriteLine($"Created workflow template at '{path}'");
             return 0;
@@ -68,5 +79,17 @@ jobs:
         {
             throw new InvalidOperationException($"Failed to create workflow: {ex.Message}", ex);
         }
+    }
+
+    private static string? TryResolveTemplatePath()
+    {
+        var cwd = Directory.GetCurrentDirectory();
+        var templatePaths = new[]
+        {
+            Path.Combine(cwd, ".github", "ghx_template.yml"),
+            Path.Combine(cwd, ".github", "ghx_template.yaml"),
+        };
+
+        return templatePaths.FirstOrDefault(File.Exists);
     }
 }

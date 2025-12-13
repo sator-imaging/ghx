@@ -64,7 +64,7 @@ ghx [command] [options] <workflow-file>
 ## Commands
 - `run`: writes a temp script file and execute. (default)
 - `dry`: prints run steps
-- `new`: creates an empty workflow file under `.github/workflows`
+- `new`: creates a workflow file under `.github/workflows` (uses `.github/ghx_template.yml|.yaml` if present)
 
 ## Options
 - `--cmd`: emit Windows `cmd.exe`-formatted output (default on Windows only; on macOS/Linux, use with `dry` to preview only).
@@ -83,6 +83,9 @@ Create a new workflow:
 ```bash
 ghx new test   # creates .github/workflows/test.yml
 ```
+
+> [!TIP]
+> If `.github/ghx_template.yml` or `.github/ghx_template.yaml` exists at the repo root, that file is copied verbatim; otherwise the default stub is used.
 
 
 Edit template:
