@@ -19,7 +19,7 @@ jobs:
         with:
           dotnet-version: 10.x.x
 
-      - run: dotnet tool install -g GitHubWorkflow
+      - run: dotnet tool install -g ghx
 
       - if: ${{ matrix.runner != 'windows-latest' }}
         run: |
