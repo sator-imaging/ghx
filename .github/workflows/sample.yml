@@ -48,7 +48,7 @@ jobs:
         pwd
         echo $0  # positional parameter conversion supported
 
-        sleep 1.5  # will be converted to 'ghx sleep'
+        ##sleep 1.5  # will be converted to 'ghx sleep'
 
   second_job:
     runs-on: ubuntu-latest
