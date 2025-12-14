@@ -30,7 +30,7 @@ internal static class ConsoleHelpers
         try
         {
             Console.WriteLine();
-            Console.WriteLine($"✓ {message}");
+            Console.WriteLine($"{message}");
         }
         finally
         {
@@ -45,7 +45,7 @@ internal static class ConsoleHelpers
         try
         {
             Console.Error.WriteLine();
-            Console.Error.WriteLine($"× Error: {message}");
+            Console.Error.WriteLine($"Error: {message}");
         }
         finally
         {
