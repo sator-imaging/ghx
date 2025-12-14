@@ -25,3 +25,9 @@ jobs:
 
           ghx run sample
           ghx run workflow-template
+
+      - if: ${{ matrix.runner == 'windows-latest' }}
+        shell: cmd
+        run: |
+          ghx run sample
+          ghx run workflow-template
