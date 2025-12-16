@@ -1,0 +1,71 @@
+name: [push.tags] Attach EXE files to release
+
+on:
+  push:
+    tags:
+
+permissions:
+  contents: write
+
+env:
+  APP_NAME: ghx
+  VERSION: ${{ github.ref_name }}
+
+jobs:
+
+  build:
+    name: Build (${{ matrix.os }} / ${{ matrix.rid }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            rid: win-x64
+          - os: windows-latest
+            rid: win-arm64
+          - os: macos-latest
+            rid: osx-x64
+          - os: macos-latest
+            rid: osx-arm64
+          - os: ubuntu-latest
+            rid: linux-x64
+          - os: ubuntu-latest
+            rid: linux-arm64
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.x.x
+
+      - name: Build & Zip
+        run: |
+          # TODO: native aot support
+          #       /p:PublishTrimmed=true
+          #       /p:PublishAot=true
+          #       /p:TrimMode=link         # optional, for trimming unused code
+          dotnet publish \
+            -c Release \
+            -f net10.0 \
+            -r ${{ matrix.rid }} \
+            --self-contained true \
+            /p:PublishSingleFile=true \
+            /p:IncludeNativeLibrariesForSelfExtract=true \
+            /p:Optimize=true \
+            /p:PublishReadyToRun=true \
+            /p:TieredCompilation=false \
+            /p:EnableCompressionInSingleFile=false \
+            /p:DebugType=none \
+            /p:DebugSymbols=false \
+            /p:StripSymbols=true \
+            -o publish/${{ matrix.rid }}
+
+          cd publish
+          zip -r ../${APP_NAME}-${VERSION}-${{ matrix.rid }}.zip ${{ matrix.rid }}
+
+      - uses: softprops/action-gh-release@v2
+        if: github.ref_type == 'tag'
+        with:
+          files: |
+            ${APP_NAME}-${VERSION}-${{ matrix.rid }}.zip
