@@ -49,7 +49,7 @@ jobs:
           #       /p:PublishTrimmed=true
           #       /p:PublishAot=true
           #       /p:TrimMode=link         # optional, for trimming unused code
-          dotnet publish \
+          dotnet publish --project src \
             -c Release \
             /p:TargetFramework=net10.0 \
             /p:TargetFrameworks= \
