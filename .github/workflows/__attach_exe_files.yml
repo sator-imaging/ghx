@@ -55,6 +55,7 @@ jobs:
             -r ${{ matrix.rid }} \
             -f net10.0 \
             --self-contained true \
+            -p:AssemblyName=${{ env.APP_NAME }} \
             -p:PublishSingleFile=true \
             -p:IncludeNativeLibrariesForSelfExtract=true \
             -p:Optimize=true \
