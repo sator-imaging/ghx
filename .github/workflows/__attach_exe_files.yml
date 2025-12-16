@@ -52,11 +52,9 @@ jobs:
           #       /p:TrimMode=link         # optional, for trimming unused code
           dotnet publish src \
             -c Release \
-            -f net10.0 \
-            /p:TargetFramework=net10.0 \
-            /p:TargetFrameworks=net10.0 \
-            --self-contained true \
             -r ${{ matrix.rid }} \
+            -f net10.0 \
+            --self-contained true \
             /p:PublishSingleFile=true \
             /p:IncludeNativeLibrariesForSelfExtract=true \
             /p:Optimize=true \
