@@ -32,6 +32,10 @@ jobs:
             rid: linux-x64
           - os: ubuntu-latest
             rid: linux-arm64
+    
+    defaults:
+      run:
+        shell: bash
 
     steps:
       - uses: actions/checkout@v4
@@ -47,9 +51,10 @@ jobs:
           #       /p:TrimMode=link         # optional, for trimming unused code
           dotnet publish \
             -c Release \
-            -f net10.0 \
-            -r ${{ matrix.rid }} \
+            /p:TargetFramework=net10.0 \
+            /p:TargetFrameworks= \
             --self-contained true \
+            -r ${{ matrix.rid }} \
             /p:PublishSingleFile=true \
             /p:IncludeNativeLibrariesForSelfExtract=true \
             /p:Optimize=true \
