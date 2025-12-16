@@ -47,23 +47,23 @@ jobs:
       - name: Build & Zip
         run: |
           # TODO: native aot support
-          #       /p:PublishTrimmed=true
-          #       /p:PublishAot=true
-          #       /p:TrimMode=link         # optional, for trimming unused code
+          #       -p:PublishTrimmed=true
+          #       -p:PublishAot=true
+          #       -p:TrimMode=link         # optional, for trimming unused code
           dotnet publish src \
             -c Release \
             -r ${{ matrix.rid }} \
             -f net10.0 \
             --self-contained true \
-            /p:PublishSingleFile=true \
-            /p:IncludeNativeLibrariesForSelfExtract=true \
-            /p:Optimize=true \
-            /p:PublishReadyToRun=true \
-            /p:TieredCompilation=false \
-            /p:EnableCompressionInSingleFile=false \
-            /p:DebugType=none \
-            /p:DebugSymbols=false \
-            /p:StripSymbols=true \
+            -p:PublishSingleFile=true \
+            -p:IncludeNativeLibrariesForSelfExtract=true \
+            -p:Optimize=true \
+            -p:PublishReadyToRun=true \
+            -p:TieredCompilation=false \
+            -p:EnableCompressionInSingleFile=false \
+            -p:DebugType=none \
+            -p:DebugSymbols=false \
+            -p:StripSymbols=true \
             -o publish/${{ matrix.rid }}
 
           cd publish
