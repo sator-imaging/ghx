@@ -1,0 +1,38 @@
+name: '[DEBUG] Publish w/NativeAOT'
+
+on:
+  workflow_dispatch:
+
+jobs:
+
+  run:
+    strategy:
+      matrix:
+        runner: [ubuntu-latest, windows-latest, macos-latest]
+
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.x.x
+
+      - run: |
+          dotnet publish nativeAot -c Release -o publish
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: nativeAot-${{ matrix.runner }}
+          path: publish/**/*
+
+      - continue-on-error: true
+        run: |
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            publish/ghx.exe run sample
+          else
+            publish/ghx run sample
+          fi
