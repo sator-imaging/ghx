@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using YamlDotNet.RepresentationModel;
+using VYaml.Serialization;
 
 namespace GitHubWorkflow.Core;
 
@@ -33,43 +33,26 @@ internal static class WorkflowUtilities
         return candidates.FirstOrDefault(File.Exists);
     }
 
-    public static YamlMappingNode LoadRoot(string path)
+    public static WorkflowRoot LoadRoot(string path)
     {
-        var yaml = new YamlStream();
-        using (var reader = new StreamReader(path))
-        {
-            yaml.Load(reader);
-        }
-
-        if (yaml.Documents.Count == 0 || yaml.Documents[0].RootNode is not YamlMappingNode root)
-        {
-            throw new InvalidOperationException("Workflow file is empty or malformed.");
-        }
-
-        return root;
+        var bytes = File.ReadAllBytes(path);
+        return YamlSerializer.Deserialize<WorkflowRoot>(bytes)
+            ?? throw new InvalidOperationException("Workflow file is empty or malformed.");
     }
 
-    public static Dictionary<string, InputDefinition> ParseInputs(YamlMappingNode root)
+    public static Dictionary<string, InputDefinition> ParseInputs(WorkflowRoot root)
     {
         var inputs = new Dictionary<string, InputDefinition>(StringComparer.OrdinalIgnoreCase);
 
-        if (!TryGetMapping(root, "on", out var onNode) ||
-            !TryGetMapping(onNode, "workflow_call", out var workflowCall) ||
-            !TryGetMapping(workflowCall, "inputs", out var inputsNode))
+        if (root.On?.WorkflowCall?.Inputs is not { } inputsNode)
         {
             return inputs;
         }
 
-        foreach (var child in inputsNode.Children)
+        foreach (var (name, inputNode) in inputsNode)
         {
-            var name = child.Key.ToString();
-            if (child.Value is not YamlMappingNode inputNode)
-            {
-                continue;
-            }
-
-            var hasDefault = inputNode.Children.TryGetValue(new YamlScalarNode("default"), out var defaultNode);
-            var defaultValue = hasDefault ? QuoteIfNeeded(defaultNode?.ToString() ?? string.Empty) : null;
+            var hasDefault = inputNode.Default is not null;
+            var defaultValue = hasDefault ? QuoteIfNeeded(inputNode.Default ?? string.Empty) : null;
 
             inputs[name] = new InputDefinition(defaultValue, hasDefault);
         }
@@ -77,51 +60,30 @@ internal static class WorkflowUtilities
         return inputs;
     }
 
-    public static Dictionary<string, YamlMappingNode> GetJobs(YamlMappingNode root)
+    public static Dictionary<string, JobDefinition> GetJobs(WorkflowRoot root)
+        => root.Jobs is { } jobs
+            ? new Dictionary<string, JobDefinition>(jobs, StringComparer.OrdinalIgnoreCase)
+            : [];
+
+    public static List<Dictionary<string, string>> BuildMatrix(JobDefinition job)
     {
-        var result = new Dictionary<string, YamlMappingNode>(StringComparer.OrdinalIgnoreCase);
-        if (!TryGetMapping(root, "jobs", out var jobsNode))
-        {
-            return result;
-        }
-
-        foreach (var job in jobsNode.Children)
-        {
-            if (job.Value is YamlMappingNode jobMap)
-            {
-                result[job.Key.ToString()] = jobMap;
-            }
-        }
-
-        return result;
-    }
-
-    public static List<Dictionary<string, string>> BuildMatrix(YamlMappingNode job)
-    {
-        if (!TryGetMapping(job, "strategy", out var strategy) ||
-            !TryGetMapping(strategy, "matrix", out var matrixNode))
+        if (job.Strategy?.Matrix is not { } matrix)
         {
             return [[]];
         }
 
         var axes = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
-        foreach (var axis in matrixNode.Children)
+        foreach (var (key, seq) in matrix)
         {
-            if (axis.Value is not YamlSequenceNode seq)
-            {
-                throw new InvalidOperationException($"Matrix '{axis.Key}' must be a sequence.");
-            }
-
-            axes[axis.Key.ToString()] = [.. seq.Select(v => QuoteIfNeeded(v.ToString()))];
+            axes[key] = [.. seq.Select(v => QuoteIfNeeded(v))];
         }
 
         return GenerateCombinations(axes);
     }
 
-    public static IEnumerable<string> ExtractRunSteps(string jobName, YamlMappingNode job)
+    public static IEnumerable<string> ExtractRunSteps(string jobName, JobDefinition job)
     {
-        if (!job.Children.TryGetValue(new YamlScalarNode("steps"), out var stepsNode) ||
-            stepsNode is not YamlSequenceNode steps)
+        if (job.Steps is not { } steps)
         {
             return [];
         }
@@ -131,30 +93,22 @@ internal static class WorkflowUtilities
         foreach (var step in steps)
         {
             stepIndex++;
-            if (step is not YamlMappingNode map)
+            if (step.Shell is not null)
             {
-                continue;
-            }
-
-            if (map.Children.ContainsKey(new YamlScalarNode("shell")))
-            {
-                var stepName = map.Children.TryGetValue(new YamlScalarNode("name"), out var nameNode)
-                    ? nameNode.ToString()
-                    : $"#{stepIndex}";
-
+                var stepName = step.Name ?? $"#{stepIndex}";
                 throw new InvalidOperationException($"Job '{jobName}' step '{stepName}' specifies shell; custom shells are not supported.");
             }
 
-            if (map.Children.TryGetValue(new YamlScalarNode("run"), out var runNode))
+            if (step.Run is { } run)
             {
-                runs.Add(runNode.ToString());
+                runs.Add(run);
             }
         }
 
         return runs;
     }
 
-    public static string BuildCommandScript(Dictionary<string, InputDefinition> inputs, Dictionary<string, YamlMappingNode> jobs, bool useCmdFormatting, bool onceOnly)
+    public static string BuildCommandScript(Dictionary<string, InputDefinition> inputs, Dictionary<string, JobDefinition> jobs, bool useCmdFormatting, bool onceOnly)
     {
         var commands = new List<string>();
 
@@ -339,19 +293,6 @@ internal static class WorkflowUtilities
         return result;
     }
 
-    private static bool TryGetMapping(YamlMappingNode parent, string key, out YamlMappingNode mapping)
-    {
-        mapping = default!;
-
-        if (parent.Children.TryGetValue(new YamlScalarNode(key), out var child) && child is YamlMappingNode node)
-        {
-            mapping = node;
-            return true;
-        }
-
-        return false;
-    }
-
     private static string DescribeMatrix(Dictionary<string, string> combo)
     {
         if (combo.Count == 0)
@@ -362,15 +303,15 @@ internal static class WorkflowUtilities
         return string.Join(" ", combo.Select(kv => $"{kv.Key}={kv.Value}"));
     }
 
-    private static (bool IsSupported, string RunnerName) ValidateRunsOn(string jobName, YamlMappingNode job, IReadOnlyDictionary<string, string> matrix, IReadOnlyDictionary<string, InputDefinition> inputs)
+    private static (bool IsSupported, string RunnerName) ValidateRunsOn(string jobName, JobDefinition job, IReadOnlyDictionary<string, string> matrix, IReadOnlyDictionary<string, InputDefinition> inputs)
     {
         var runner = ResolveRunsOn(jobName, job, matrix, inputs);
         return (runner.Equals("ubuntu-latest", StringComparison.OrdinalIgnoreCase), runner);
     }
 
-    private static string ResolveRunsOn(string jobName, YamlMappingNode job, IReadOnlyDictionary<string, string> matrix, IReadOnlyDictionary<string, InputDefinition> inputs)
+    private static string ResolveRunsOn(string jobName, JobDefinition job, IReadOnlyDictionary<string, string> matrix, IReadOnlyDictionary<string, InputDefinition> inputs)
     {
-        if (!job.Children.TryGetValue(new YamlScalarNode("runs-on"), out var runsOnNode))
+        if (job.RunsOn is not { } runsOn)
         {
             throw new InvalidOperationException($"Job '{jobName}' must specify runs-on.");
         }
@@ -382,18 +323,17 @@ internal static class WorkflowUtilities
             return RegexHelpers.PlaceholderPattern.Replace(value ?? string.Empty, new MatchEvaluator(placeholderResolver)).Trim();
         }
 
-        return runsOnNode switch
+        return runsOn switch
         {
-            YamlScalarNode scalar => ReplaceRunnerValue(scalar.Value ?? string.Empty),
-            YamlSequenceNode sequence => string.Join(" ", sequence.Children
-                .Select(node =>
+            string scalar => ReplaceRunnerValue(scalar),
+            IEnumerable<object> sequence => string.Join(" ", sequence
+                .Select(obj =>
                 {
-                    if (node is not YamlScalarNode scalarNode)
+                    if (obj is not string scalar)
                     {
                         throw new InvalidOperationException($"Job '{jobName}' runs-on entries must be scalars.");
                     }
-
-                    return ReplaceRunnerValue(scalarNode.Value ?? string.Empty);
+                    return ReplaceRunnerValue(scalar);
                 })
                 .Where(value => !string.IsNullOrWhiteSpace(value))),
             _ => throw new InvalidOperationException($"Job '{jobName}' has invalid runs-on definition.")

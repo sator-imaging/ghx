@@ -13,7 +13,7 @@
 
   <ItemGroup>
     <PackageReference Include="System.CommandLine" Version="2.0.0" />
-    <PackageReference Include="YamlDotNet" Version="16.3.0" />
+    <PackageReference Include="VYaml" Version="1.2.0" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -23,7 +23,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="../src/**/*.cs" Link="%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../src/**/*.cs" Exclude="../src/bin/**/*.cs;../src/obj/**/*.cs" Link="%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>

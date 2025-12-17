@@ -1,8 +1,6 @@
 // Licensed under the MIT License
 // https://github.com/sator-imaging/GitHubWorkflow
 
-#if __TODO_VYAML_MIGRATION__
-
 using System.Collections.Generic;
 using VYaml.Annotations;
 
@@ -20,7 +18,7 @@ namespace GitHubWorkflow.Core;
 
 // Minimal POCOs covering only the YAML shapes the current implementation reads.
 [YamlObject]
-internal sealed class WorkflowRoot
+internal sealed partial class WorkflowRoot
 {
     [YamlMember("on")]
     public WorkflowOn? On { get; init; }
@@ -30,20 +28,20 @@ internal sealed class WorkflowRoot
 }
 
 [YamlObject]
-internal sealed class WorkflowOn
+internal sealed partial class WorkflowOn
 {
     [YamlMember("workflow_call")]
     public WorkflowCall? WorkflowCall { get; init; }
 }
 
 [YamlObject]
-internal sealed class WorkflowCall
+internal sealed partial class WorkflowCall
 {
     public Dictionary<string, WorkflowInput>? Inputs { get; init; }
 }
 
 [YamlObject]
-internal sealed class WorkflowInput
+internal sealed partial class WorkflowInput
 {
     // Only the default value is used in the current logic.
     [YamlMember("default")]
@@ -51,7 +49,7 @@ internal sealed class WorkflowInput
 }
 
 [YamlObject]
-internal sealed class JobDefinition
+internal sealed partial class JobDefinition
 {
     // Accepts scalar or sequence; a converter/normalizer will be added when wiring VYaml.
     [YamlMember("runs-on")]
@@ -63,14 +61,14 @@ internal sealed class JobDefinition
 }
 
 [YamlObject]
-internal sealed class JobStrategy
+internal sealed partial class JobStrategy
 {
     // Matrix axes are sequences of strings in the current workflow parsing code.
     public Dictionary<string, List<string>>? Matrix { get; init; }
 }
 
 [YamlObject]
-internal sealed class JobStep
+internal sealed partial class JobStep
 {
     public string? Name { get; init; }
 
@@ -78,5 +76,3 @@ internal sealed class JobStep
 
     public string? Shell { get; init; }
 }
-
-#endif
