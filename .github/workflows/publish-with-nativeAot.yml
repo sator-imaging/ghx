@@ -56,6 +56,8 @@ jobs:
             test--error--run-has-shell  || true  # true won't change '$?'
           if [ $? -eq 0 ]; then
             exit 1
+          else
+            echo Expected error occurred
           fi
 
           echo ====================
@@ -65,6 +67,8 @@ jobs:
             test--error--input-has-no-default  || true  # true won't change '$?'
           if [ $? -eq 0 ]; then
             exit 1
+          else
+            echo Expected error occurred
           fi
 
       - run: |
