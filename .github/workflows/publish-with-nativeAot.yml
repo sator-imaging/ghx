@@ -45,8 +45,7 @@ jobs:
           name: ghx-${{ matrix.rid }}
           path: publish/**/*
 
-      - continue-on-error: true
-        run: |
+      - run: |
           # VYaml migration tests
 
           echo =================
