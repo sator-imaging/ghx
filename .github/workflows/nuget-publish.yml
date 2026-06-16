@@ -70,8 +70,8 @@ jobs:
         ## NOTE: build required before packing
 
         cd ./${{ matrix.package }}
-        dotnet build -c Release  -p:ContinuousIntegrationBuild=true
-        dotnet pack  -c Release  -p:ContinuousIntegrationBuild=true  ${{ matrix.pack-as-command-name }}
+        dotnet build -c Release
+        dotnet pack  -c Release  ${{ matrix.pack-as-command-name }}
         cd ..
 
     ################################
