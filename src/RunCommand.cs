@@ -26,7 +26,7 @@ internal sealed class RunCommand
             throw new InvalidOperationException("No jobs found in workflow.");
         }
 
-        var script = WorkflowUtilities.BuildCommandScript(inputs, jobs, useCmdFormatting, useWsl, onceOnly);
+        var script = WorkflowUtilities.BuildCommandScript(inputs, jobs, useCmdFormatting, onceOnly);
 
         var extension = useCmdFormatting ? ".bat" : ".sh";
         var tempPath = Path.Combine(Path.GetTempPath(), $"SatorImaging.{nameof(GitHubWorkflow)}-{Guid.NewGuid():N}{extension}");

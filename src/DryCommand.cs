@@ -8,7 +8,7 @@ namespace GitHubWorkflow;
 
 internal sealed class DryCommand
 {
-    public static void Run(string path, bool useCmdFormatting, bool useWsl, bool onceOnly)
+    public static void Run(string path, bool useCmdFormatting, bool onceOnly)
     {
         var root = WorkflowUtilities.LoadRoot(path);
 
@@ -19,7 +19,7 @@ internal sealed class DryCommand
             throw new InvalidOperationException("No jobs found in workflow.");
         }
 
-        var script = WorkflowUtilities.BuildCommandScript(inputs, jobs, useCmdFormatting, useWsl, onceOnly);
+        var script = WorkflowUtilities.BuildCommandScript(inputs, jobs, useCmdFormatting, onceOnly);
         Console.WriteLine(script);
     }
 }

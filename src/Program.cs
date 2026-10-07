@@ -106,7 +106,7 @@ var dryAction = (ParseResult args) =>
 
         WorkflowFileHelpers.EnsureWorkflowExists(resolvedPath);
 
-        DryCommand.Run(resolvedPath, useCmdFormatting, useWsl, onceOnly);
+        DryCommand.Run(resolvedPath, useCmdFormatting, onceOnly);
         return 0;
     });
 };

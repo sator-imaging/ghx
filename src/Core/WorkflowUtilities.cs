@@ -154,7 +154,7 @@ internal static class WorkflowUtilities
         return runs;
     }
 
-    public static string BuildCommandScript(Dictionary<string, InputDefinition> inputs, Dictionary<string, YamlMappingNode> jobs, bool useCmdFormatting, bool useWsl, bool onceOnly)
+    public static string BuildCommandScript(Dictionary<string, InputDefinition> inputs, Dictionary<string, YamlMappingNode> jobs, bool useCmdFormatting, bool onceOnly)
     {
         var commands = new List<string>();
 
@@ -163,7 +163,7 @@ internal static class WorkflowUtilities
             commands.Add("@ECHO OFF");
             commands.Add(string.Empty);
         }
-        else if (!OperatingSystem.IsWindows() || useWsl)
+        else if (!OperatingSystem.IsWindows())
         {
             commands.Add("set -o errexit       # Exit immediately when a command fails");
             commands.Add("set -o errtrace      # Inherit ERR traps in functions, subshells, and command substitutions");
