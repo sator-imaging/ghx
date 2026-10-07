@@ -263,7 +263,7 @@ GITHUB_STEP_SUMMARY=/dev/stdout
             var unsupportedExpressionLine = script.Split('\n').FirstOrDefault(line => line.Contains("${{", StringComparison.Ordinal));
             if (unsupportedExpressionLine is not null)
             {
-                throw new InvalidOperationException($"Unsupported template expression found: {unsupportedExpressionLine}");
+                throw new InvalidOperationException($"Unsupported template expression found after script processing: {unsupportedExpressionLine}");
             }
 
             return LinuxScriptHeader + "\n" + script;

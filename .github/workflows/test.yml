@@ -30,6 +30,23 @@ jobs:
           ${{ matrix.once }} \
           sample
 
+  dry-platform-specific:
+    strategy:
+      matrix:
+        runner: [ubuntu-latest, windows-latest]
+
+    runs-on: ${{ matrix.runner }}
+
+    steps:
+    - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5      # v4.3.1
+    - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9  # v4.3.1
+      with:
+        dotnet-version: 10.x.x
+
+    - name: Verify platform-specific dry-run behavior
+      shell: pwsh
+      run: ./\.github\scripts\test-dry-platform-specific.ps1
+
   run:
     strategy:
       matrix:
