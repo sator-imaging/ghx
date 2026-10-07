@@ -168,7 +168,7 @@ GITHUB_STEP_SUMMARY=/dev/stdout
         return runs;
     }
 
-    public static string BuildCommandScript(Dictionary<string, InputDefinition> inputs, Dictionary<string, YamlMappingNode> jobs, bool useCmdFormatting, bool onceOnly)
+    public static string BuildCommandScript(Dictionary<string, InputDefinition> inputs, Dictionary<string, YamlMappingNode> jobs, bool useCmdFormatting, bool useWsl, bool onceOnly)
     {
         var commands = new List<string>();
 
