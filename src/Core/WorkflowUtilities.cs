@@ -179,8 +179,16 @@ GITHUB_STEP_SUMMARY=/dev/stdout
         }
         else
         {
-            commands.Add(LinuxHeaderTemplate);
-            commands.Add(string.Empty);
+            if (OperatingSystem.IsLinux() || useWsl)
+            {
+                commands.Add(LinuxHeaderTemplate);
+                commands.Add(string.Empty);
+            }
+            else
+            {
+                commands.Add("set -e");
+                commands.Add(string.Empty);
+            }
         }
 
         if (inputs.Count > 0)
