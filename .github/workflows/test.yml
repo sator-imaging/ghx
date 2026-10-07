@@ -45,7 +45,7 @@ jobs:
 
     - name: Verify platform-specific dry-run behavior
       shell: pwsh
-      run: ./\.github\scripts\test-dry-platform-specific.ps1
+      run: ./.github/scripts/test-dry-platform-specific.ps1
 
   run:
     strategy:
