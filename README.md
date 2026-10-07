@@ -214,6 +214,7 @@ jobs:
 
 - Placeholder values for `inputs.*` and `matrix.*` are pulled from defaults/matrix entries and quoted as needed.
 - Any `>> $GITHUB_STEP_SUMMARY` or `> $GITHUB_STEP_SUMMARY` redirections are removed from generated commands.
+- Bash output on Linux and WSL starts with strict shell options and sets `GITHUB_STEP_SUMMARY=/dev/stdout`; shell variables are allowed, while unresolved GitHub `${{ ... }}` expressions remain unsupported.
 - Inline comments (`# ...`) in `run` steps are stripped before processing.
 - Steps cannot specify a custom `shell`; the tool only supports the default shell for the selected output format and will error if a step sets `shell`.
 - Bash-to-cmd conversion replaces trailing `\` with `^`, prepends `CALL` (since many tools ship as `.bat`/`.cmd`), and appends a failure guard to mimic `bash -e` behavior on Windows.
