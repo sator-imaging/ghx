@@ -1,0 +1,52 @@
+name: Test Linux special handling
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dry:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5      # v4.3.1
+    - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9  # v4.3.1
+      with:
+        dotnet-version: 10.x.x
+
+    - run: |
+        dollar_workflow=dry-shell-dollar
+        template_workflow=dry-shell-template
+        trap 'rm -f ".github/workflows/$dollar_workflow.yml" ".github/workflows/$template_workflow.yml"' EXIT
+
+        cat > ".github/workflows/$dollar_workflow.yml" <<'EOF'
+        jobs:
+          test:
+            runs-on: ubuntu-latest
+            steps:
+            - run: echo "$HOME"
+        EOF
+
+        dotnet run -c Debug -f net10.0 --project ./src -- dry --wsl "$dollar_workflow" > dry-output.txt
+        grep -F 'echo "$HOME"' dry-output.txt
+
+        template_expression='$''{{ env.MISSING }}'
+        cat > ".github/workflows/$template_workflow.yml" <<EOF
+        jobs:
+          test:
+            runs-on: ubuntu-latest
+            steps:
+            - run: echo "$template_expression"
+        EOF
+
+        if dotnet run -c Debug -f net10.0 --project ./src -- dry --wsl "$template_workflow" > dry-error.txt 2>&1; then
+          echo "Expected dry to reject an unresolved template expression"
+          exit 1
+        fi
+        grep -F "Unsupported template expression found after script processing:" dry-error.txt
