@@ -154,7 +154,7 @@ internal static class WorkflowUtilities
         return runs;
     }
 
-    public static string BuildCommandScript(Dictionary<string, InputDefinition> inputs, Dictionary<string, YamlMappingNode> jobs, bool useCmdFormatting, bool onceOnly)
+    public static string BuildCommandScript(Dictionary<string, InputDefinition> inputs, Dictionary<string, YamlMappingNode> jobs, bool useCmdFormatting, bool useWsl, bool onceOnly)
     {
         var commands = new List<string>();
 
@@ -163,13 +163,20 @@ internal static class WorkflowUtilities
             commands.Add("@ECHO OFF");
             commands.Add(string.Empty);
         }
-        else
+        else if (!OperatingSystem.IsWindows() || useWsl)
         {
-            if (!OperatingSystem.IsWindows())  // TODO: not work as expected on WSL. why??
-            {
-                commands.Add("set -e");
-                commands.Add(string.Empty);
-            }
+            commands.Add("set -o errexit       # Exit immediately when a command fails");
+            commands.Add("set -o errtrace      # Inherit ERR traps in functions, subshells, and command substitutions");
+            commands.Add("set -o nounset       # Treat unset variables as errors");
+            commands.Add("set -o pipefail      # Return failure if any command in a pipeline fails");
+            commands.Add(string.Empty);
+            commands.Add("shopt -s inherit_errexit  # Preserve errexit inside command substitutions");
+            commands.Add("shopt -s nullglob         # Expand unmatched globs to nothing");
+            commands.Add("shopt -s failglob         # Treat unmatched globs as errors");
+            commands.Add("shopt -s checkjobs        # Check for running/stopped jobs before exiting");
+            commands.Add(string.Empty);
+            commands.Add("GITHUB_STEP_SUMMARY=/dev/stdout");
+            commands.Add(string.Empty);
         }
 
         if (inputs.Count > 0)
@@ -300,7 +307,8 @@ internal static class WorkflowUtilities
                 }
             }
 
-            if (replacedLine.Contains('$'))
+            if (replacedLine.Contains('$') &&
+                (useCmdFormatting || replacedLine.Contains("${{", StringComparison.Ordinal)))
             {
                 var variableCheckTarget = RegexHelpers.DollarPositionalPattern.Replace(replacedLine, string.Empty);
                 if (variableCheckTarget.Contains('$'))
