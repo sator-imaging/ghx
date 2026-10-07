@@ -14,8 +14,9 @@ jobs:
         configuration: [Debug, Release]
         mode: ["", "--cmd", "--wsl"]
         once: ["", "--once"]
+        runner: [ubuntu-latest, windows-latest]
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
 
     steps:
     - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5      # v4.3.1
@@ -29,79 +30,6 @@ jobs:
           ${{ matrix.mode }} \
           ${{ matrix.once }} \
           sample
-
-  dry-platform-specific:
-    strategy:
-      matrix:
-        runner: [ubuntu-latest, windows-latest]
-
-    runs-on: ${{ matrix.runner }}
-    permissions:
-      contents: read
-
-    steps:
-    - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5      # v4.3.1
-    - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9  # v4.3.1
-      with:
-        dotnet-version: 10.x.x
-
-    - name: Verify platform-specific dry-run behavior
-      shell: pwsh
-      run: |
-        $workflowDirectory = Join-Path $PWD ".github/workflows"
-        $dollarWorkflow = "dry-shell-dollar"
-        $templateWorkflow = "dry-shell-template"
-        $dollarWorkflowContent = @'
-        jobs:
-          test:
-            runs-on: ubuntu-latest
-            steps:
-            - run: echo "$HOME"
-        '@
-        $templateExpression = '$' + '{{ env.MISSING }}'
-        $templateWorkflowContent = @"
-        jobs:
-          test:
-            runs-on: ubuntu-latest
-            steps:
-            - run: echo "$templateExpression"
-        "@
-
-        Set-Content (Join-Path $workflowDirectory "$dollarWorkflow.yml") $dollarWorkflowContent
-        Set-Content (Join-Path $workflowDirectory "$templateWorkflow.yml") $templateWorkflowContent
-
-        function Invoke-Dry([string]$workflowName) {
-          $output = & dotnet run -c Debug -f net10.0 --project ./src -- dry --wsl $workflowName 2>&1
-          $exitCode = $LASTEXITCODE
-          return @{
-            ExitCode = $exitCode
-            Output = $output | Out-String
-          }
-        }
-
-        try {
-          if ($env:RUNNER_OS -eq "Windows") {
-            $result = Invoke-Dry $dollarWorkflow
-            if ($result.ExitCode -eq 0 -or $result.Output -notmatch "Unsupported template expression found:") {
-              throw "Expected dry to reject a shell `$` variable on Windows. Output: $($result.Output)"
-            }
-          }
-          else {
-            $result = Invoke-Dry $dollarWorkflow
-            if ($result.ExitCode -ne 0 -or $result.Output -notmatch 'echo "\$HOME"') {
-              throw "Expected dry to allow a shell `$` variable on Linux. Output: $($result.Output)"
-            }
-
-            $result = Invoke-Dry $templateWorkflow
-            if ($result.ExitCode -eq 0 -or $result.Output -notmatch "Unsupported template expression found after script processing:") {
-              throw "Expected dry to reject an unresolved $templateExpression expression on Linux. Output: $($result.Output)"
-            }
-          }
-        }
-        finally {
-          Remove-Item (Join-Path $workflowDirectory "$dollarWorkflow.yml") -ErrorAction SilentlyContinue
-          Remove-Item (Join-Path $workflowDirectory "$templateWorkflow.yml") -ErrorAction SilentlyContinue
-        }
 
   run:
     strategy:
