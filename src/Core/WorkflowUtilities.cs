@@ -308,7 +308,9 @@ internal static class WorkflowUtilities
             }
 
             if (replacedLine.Contains('$') &&
-                (useCmdFormatting || replacedLine.Contains("${{", StringComparison.Ordinal)))
+                (OperatingSystem.IsWindows()
+                    ? useCmdFormatting
+                    : replacedLine.Contains("${{", StringComparison.Ordinal)))
             {
                 var variableCheckTarget = RegexHelpers.DollarPositionalPattern.Replace(replacedLine, string.Empty);
                 if (variableCheckTarget.Contains('$'))
