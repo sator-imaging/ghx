@@ -12,6 +12,20 @@ namespace GitHubWorkflow.Core;
 
 internal static class WorkflowUtilities
 {
+    private const string LinuxScriptHeader = """
+set -o errexit       # Exit immediately when a command fails
+set -o errtrace      # Inherit ERR traps in functions, subshells, and command substitutions
+set -o nounset       # Treat unset variables as errors
+set -o pipefail      # Return failure if any command in a pipeline fails
+
+shopt -s inherit_errexit  # Preserve errexit inside command substitutions
+shopt -s nullglob         # Expand unmatched globs to nothing
+shopt -s failglob         # Treat unmatched globs as errors
+shopt -s checkjobs        # Check for running/stopped jobs before exiting
+
+GITHUB_STEP_SUMMARY=/dev/stdout
+""";
+
     private static readonly string[] LineSeparators = ["\r\n", "\n"];
 
     public static string? ResolveWorkflowPath(string inputName)
@@ -157,6 +171,7 @@ internal static class WorkflowUtilities
     public static string BuildCommandScript(Dictionary<string, InputDefinition> inputs, Dictionary<string, YamlMappingNode> jobs, bool useCmdFormatting, bool onceOnly)
     {
         var commands = new List<string>();
+        var useLinuxShell = !OperatingSystem.IsWindows() && !useCmdFormatting;
 
         if (useCmdFormatting)
         {
@@ -223,7 +238,7 @@ internal static class WorkflowUtilities
 
                 foreach (var run in runSteps)
                 {
-                    var command = ConvertRunStep(run, inputs, combo, useCmdFormatting);
+                    var command = ConvertRunStepInternal(run, inputs, combo, useCmdFormatting, !useLinuxShell);
                     commands.Add(command.Trim());
                 }
             }
@@ -242,10 +257,27 @@ internal static class WorkflowUtilities
             commands.Add("  EXIT 310");
         }
 
-        return string.Join(useCmdFormatting ? Environment.NewLine : "\n", commands);  // "\n" for WSL compatibility
+        var script = string.Join(useCmdFormatting ? Environment.NewLine : "\n", commands);  // "\n" for WSL compatibility
+        if (useLinuxShell)
+        {
+            var unsupportedExpressionLine = script.Split('\n').FirstOrDefault(line => line.Contains("${{", StringComparison.Ordinal));
+            if (unsupportedExpressionLine is not null)
+            {
+                throw new InvalidOperationException($"Unsupported template expression found after script processing: {unsupportedExpressionLine}");
+            }
+
+            return LinuxScriptHeader + "\n" + script;
+        }
+
+        return script;
     }
 
     public static string ConvertRunStep(string run, IReadOnlyDictionary<string, InputDefinition> inputs, IReadOnlyDictionary<string, string> matrix, bool useCmdFormatting)
+    {
+        return ConvertRunStepInternal(run, inputs, matrix, useCmdFormatting, true);
+    }
+
+    private static string ConvertRunStepInternal(string run, IReadOnlyDictionary<string, InputDefinition> inputs, IReadOnlyDictionary<string, string> matrix, bool useCmdFormatting, bool validateUnsupportedTemplateExpressions)
     {
         var placeholderResolver = CreatePlaceholderResolver(inputs, matrix);
 
@@ -300,7 +332,7 @@ internal static class WorkflowUtilities
                 }
             }
 
-            if (replacedLine.Contains('$'))
+            if (validateUnsupportedTemplateExpressions && replacedLine.Contains('$'))
             {
                 var variableCheckTarget = RegexHelpers.DollarPositionalPattern.Replace(replacedLine, string.Empty);
                 if (variableCheckTarget.Contains('$'))
