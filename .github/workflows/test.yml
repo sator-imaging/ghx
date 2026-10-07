@@ -47,3 +47,8 @@ jobs:
     - run: |
         dotnet run -c ${{ matrix.configuration }} -f net10.0 --project ./src -- run sample
         dotnet run -c ${{ matrix.configuration }} -f net10.0 --project ./src -- new workflow-template
+        if [ "$RUNNER_OS" = "Windows" ]; then
+          ! dotnet run -c ${{ matrix.configuration }} -f net10.0 --project ./src -- run workflow_call_only
+        else
+          dotnet run -c ${{ matrix.configuration }} -f net10.0 --project ./src -- run workflow_call_only
+        fi

@@ -1,0 +1,11 @@
+on:
+  workflow_call:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "Test linux special handling"
+          VAR="test_value"
+          echo $VAR
