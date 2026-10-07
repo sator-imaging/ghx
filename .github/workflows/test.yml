@@ -47,7 +47,61 @@ jobs:
 
     - name: Verify platform-specific dry-run behavior
       shell: pwsh
-      run: ./.github/scripts/test-dry-platform-specific.ps1
+      run: |
+        $workflowDirectory = Join-Path $PWD ".github/workflows"
+        $dollarWorkflow = "dry-shell-dollar"
+        $templateWorkflow = "dry-shell-template"
+        $dollarWorkflowContent = @'
+        jobs:
+          test:
+            runs-on: ubuntu-latest
+            steps:
+            - run: echo "$HOME"
+        '@
+        $templateExpression = '$' + '{{ env.MISSING }}'
+        $templateWorkflowContent = @"
+        jobs:
+          test:
+            runs-on: ubuntu-latest
+            steps:
+            - run: echo "$templateExpression"
+        "@
+
+        Set-Content (Join-Path $workflowDirectory "$dollarWorkflow.yml") $dollarWorkflowContent
+        Set-Content (Join-Path $workflowDirectory "$templateWorkflow.yml") $templateWorkflowContent
+
+        function Invoke-Dry([string]$workflowName) {
+          $output = & dotnet run -c Debug -f net10.0 --project ./src -- dry --wsl $workflowName 2>&1
+          $exitCode = $LASTEXITCODE
+          return @{
+            ExitCode = $exitCode
+            Output = $output | Out-String
+          }
+        }
+
+        try {
+          if ($env:RUNNER_OS -eq "Windows") {
+            $result = Invoke-Dry $dollarWorkflow
+            if ($result.ExitCode -eq 0 -or $result.Output -notmatch "Unsupported template expression found:") {
+              throw "Expected dry to reject a shell `$` variable on Windows. Output: $($result.Output)"
+            }
+          }
+          else {
+            $result = Invoke-Dry $dollarWorkflow
+            if ($result.ExitCode -ne 0 -or $result.Output -notmatch 'echo "\$HOME"') {
+              throw "Expected dry to allow a shell `$` variable on Linux. Output: $($result.Output)"
+            }
+
+            $result = Invoke-Dry $templateWorkflow
+            if ($result.ExitCode -eq 0 -or $result.Output -notmatch "Unsupported template expression found after script processing:") {
+              throw "Expected dry to reject an unresolved $templateExpression expression on Linux. Output: $($result.Output)"
+            }
+          }
+        }
+        finally {
+          Remove-Item (Join-Path $workflowDirectory "$dollarWorkflow.yml") -ErrorAction SilentlyContinue
+          Remove-Item (Join-Path $workflowDirectory "$templateWorkflow.yml") -ErrorAction SilentlyContinue
+        }
 
   run:
     strategy:
