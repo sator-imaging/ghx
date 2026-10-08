@@ -45,6 +45,8 @@ jobs:
         dotnet-version: 10.x.x
 
     - shell: bash
+      env:
+        PATH: /opt/homebrew/bin:/usr/local/bin:${{ env.PATH }}
       run: |
         dotnet run -c ${{ matrix.configuration }} -f net10.0 --project ./src -- run sample
         dotnet run -c ${{ matrix.configuration }} -f net10.0 --project ./src -- new workflow-template

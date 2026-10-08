@@ -168,7 +168,7 @@ GITHUB_STEP_SUMMARY=/dev/stdout
         return runs;
     }
 
-    public static string BuildCommandScript(Dictionary<string, InputDefinition> inputs, Dictionary<string, YamlMappingNode> jobs, bool useCmdFormatting, bool useWsl, bool onceOnly)
+    public static string BuildCommandScript(Dictionary<string, InputDefinition> inputs, Dictionary<string, YamlMappingNode> jobs, bool useCmdFormatting, bool onceOnly)
     {
         var commands = new List<string>();
 
@@ -179,14 +179,9 @@ GITHUB_STEP_SUMMARY=/dev/stdout
         }
         else
         {
-            if (OperatingSystem.IsLinux() || useWsl)
+            if (!OperatingSystem.IsWindows())
             {
                 commands.Add(LinuxHeaderTemplate);
-                commands.Add(string.Empty);
-            }
-            else
-            {
-                commands.Add("set -e");
                 commands.Add(string.Empty);
             }
         }
