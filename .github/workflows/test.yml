@@ -44,14 +44,17 @@ jobs:
       with:
         dotnet-version: 10.x.x
 
-    - shell: bash
-      env:
-        PATH: /opt/homebrew/bin:/usr/local/bin:${{ env.PATH }}
-      run: |
+    - run: |
         dotnet run -c ${{ matrix.configuration }} -f net10.0 --project ./src -- run sample
         dotnet run -c ${{ matrix.configuration }} -f net10.0 --project ./src -- new workflow-template
-        if [ "$RUNNER_OS" = "Windows" ]; then
-          ! dotnet run -c ${{ matrix.configuration }} -f net10.0 --project ./src -- run workflow_call_only
-        else
-          dotnet run -c ${{ matrix.configuration }} -f net10.0 --project ./src -- run workflow_call_only
-        fi
+
+    - if: runner.os != 'Windows'
+      run: |
+        dotnet run -c ${{ matrix.configuration }} -f net10.0 --project ./src -- run workflow_call_only
+
+    - if: runner.os == 'Windows'
+      shell: cmd
+      run: |
+        dotnet run -c ${{ matrix.configuration }} -f net10.0 --project ./src -- run workflow_call_only
+        if %ERRORLEVEL% NEQ 0 exit /b 0
+        exit /b 1
