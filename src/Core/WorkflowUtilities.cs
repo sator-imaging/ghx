@@ -12,6 +12,20 @@ namespace GitHubWorkflow.Core;
 
 internal static class WorkflowUtilities
 {
+    private const string LinuxHeaderTemplate = """
+set -o errexit       # Exit immediately when a command fails
+set -o errtrace      # Inherit ERR traps in functions, subshells, and command substitutions
+set -o nounset       # Treat unset variables as errors
+set -o pipefail      # Return failure if any command in a pipeline fails
+
+shopt -s inherit_errexit  # Preserve errexit inside command substitutions
+shopt -s nullglob         # Expand unmatched globs to nothing
+shopt -s failglob         # Treat unmatched globs as errors
+shopt -s checkjobs        # Check for running/stopped jobs before exiting
+
+GITHUB_STEP_SUMMARY=/dev/stdout
+""";
+
     private static readonly string[] LineSeparators = ["\r\n", "\n"];
 
     public static string? ResolveWorkflowPath(string inputName)
@@ -165,7 +179,12 @@ internal static class WorkflowUtilities
         }
         else
         {
-            if (!OperatingSystem.IsWindows())  // TODO: not work as expected on WSL. why??
+            if (OperatingSystem.IsLinux())
+            {
+                commands.Add(LinuxHeaderTemplate);
+                commands.Add(string.Empty);
+            }
+            else if (!OperatingSystem.IsWindows())
             {
                 commands.Add("set -e");
                 commands.Add(string.Empty);
@@ -300,12 +319,22 @@ internal static class WorkflowUtilities
                 }
             }
 
-            if (replacedLine.Contains('$'))
+            if (useCmdFormatting)
             {
-                var variableCheckTarget = RegexHelpers.DollarPositionalPattern.Replace(replacedLine, string.Empty);
-                if (variableCheckTarget.Contains('$'))
+                if (replacedLine.Contains('$'))
                 {
-                    throw new InvalidOperationException($"Unsupported template expression found: {variableCheckTarget}");
+                    var variableCheckTarget = RegexHelpers.DollarPositionalPattern.Replace(replacedLine, string.Empty);
+                    if (variableCheckTarget.Contains('$'))
+                    {
+                        throw new InvalidOperationException($"Unsupported template expression found: {variableCheckTarget}");
+                    }
+                }
+            }
+            else
+            {
+                if (replacedLine.Contains("${{"))
+                {
+                    throw new InvalidOperationException($"Unsupported template expression found: {replacedLine}");
                 }
             }
 
